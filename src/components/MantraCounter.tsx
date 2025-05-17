@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SpeechDetection } from "@/utils/speechDetection";
 import TargetSelector from "@/components/TargetSelector";
 import CompletionAlert from "@/components/CompletionAlert";
-import { Plus, Mic, MicOff, Volume, Volume2, VolumeOff } from "lucide-react";
+import { Mic, MicOff, Volume, Volume2 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 
 const MantraCounter: React.FC = () => {
@@ -42,7 +42,6 @@ const MantraCounter: React.FC = () => {
   const requestMicPermission = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Stop tracks immediately after permission granted
       stream.getTracks().forEach(track => track.stop());
       setMicPermission(true);
       toast.success("Microphone access granted");
@@ -61,7 +60,6 @@ const MantraCounter: React.FC = () => {
       if (!granted) return;
     }
     
-    // Set minDecibels based on sensitivity level
     const minDecibelsSettings = [-50, -60, -70]; // low, medium, high
     
     if (!speechDetection.current) {
@@ -73,13 +71,13 @@ const MantraCounter: React.FC = () => {
         },
         onSpeechEnded: () => {
           if (speechDetected.current) {
-            // If we had speech and now it ended with a pause of at least 0.8 second
             const now = Date.now();
             if (now - lastSpeechTime.current > 800) {
               setCurrentCount(count => {
                 const newCount = count + 1;
                 toast.success(`Mantra counted: ${newCount}`, {
                   duration: 1000,
+                  style: { background: '#262626', color: '#fcd34d' },
                 });
                 return newCount;
               });
@@ -98,9 +96,13 @@ const MantraCounter: React.FC = () => {
     if (started) {
       setIsListening(true);
       lastSpeechTime.current = Date.now();
-      toast.success(`Listening for mantras (Sensitivity: ${getSensitivityLabel()})`);
+      toast.success(`Listening for mantras (Sensitivity: ${getSensitivityLabel()})`, {
+        style: { background: '#262626', color: '#fcd34d' }
+      });
     } else {
-      toast.error("Failed to start listening. Please try again.");
+      toast.error("Failed to start listening. Please try again.", {
+        style: { background: '#262626', color: '#fcd34d' }
+      });
     }
   };
 
@@ -124,7 +126,9 @@ const MantraCounter: React.FC = () => {
       }, 300);
     }
     
-    toast.info(`Microphone sensitivity: ${getSensitivityLabel()}`);
+    toast.info(`Microphone sensitivity: ${getSensitivityLabel()}`, {
+      style: { background: '#262626', color: '#fcd34d' }
+    });
   };
 
   const stopListening = () => {
@@ -134,7 +138,9 @@ const MantraCounter: React.FC = () => {
     }
     setIsListening(false);
     setAudioLevel(0);
-    toast.info("Stopped listening");
+    toast.info("Stopped listening", {
+      style: { background: '#262626', color: '#fcd34d' }
+    });
   };
 
   const toggleListening = async () => {
@@ -151,7 +157,9 @@ const MantraCounter: React.FC = () => {
     }
     setCurrentCount(0);
     setShowCompletionAlert(false);
-    toast.info("Counter reset");
+    toast.info("Counter reset", {
+      style: { background: '#262626', color: '#fcd34d' }
+    });
   };
 
   const handleReset = () => {
@@ -159,7 +167,6 @@ const MantraCounter: React.FC = () => {
     setTargetCount(null);
   };
 
-  // Calculate progress percentage
   const progressPercentage = targetCount ? (currentCount / targetCount) * 100 : 0;
 
   const getSensitivityIcon = () => {
@@ -168,114 +175,102 @@ const MantraCounter: React.FC = () => {
     return <Volume2 className="w-5 h-5" />;
   };
 
+  if (targetCount === null) {
+    return <TargetSelector onSelectTarget={handleSelectTarget} />;
+  }
+
   return (
     <div className="flex flex-col items-center w-full max-w-md mx-auto px-4">
-      {targetCount === null ? (
-        <TargetSelector onSelectTarget={handleSelectTarget} />
-      ) : (
-        <div className="flex flex-col items-center w-full">
-          <div className="mb-8 text-center">
-            <p className="text-gray-500">Target</p>
-            <h2 className="text-2xl font-medium text-orange-500">{targetCount} Mantras</h2>
-          </div>
-          
-          <div className="counter-display relative mb-10">
-            {/* Progress ring */}
-            <svg className="w-48 h-48" viewBox="0 0 100 100">
-              <circle 
-                cx="50" 
-                cy="50" 
-                r="45" 
-                fill="white"
-                stroke="#e2e8f0" 
-                strokeWidth="8"
-              />
-              <circle 
-                cx="50" 
-                cy="50" 
-                r="45" 
-                fill="transparent"
-                stroke="#f97316" 
-                strokeWidth="8"
-                strokeDasharray={`${Math.min(progressPercentage, 100) * 2.83} 283`}
-                strokeDashoffset="0"
-                transform="rotate(-90 50 50)"
-              />
-            </svg>
-            
-            <div className="absolute inset-0 flex flex-col justify-center items-center">
-              <span className="text-5xl font-bold text-gray-700">{currentCount}</span>
-              {isListening && (
-                <div className={`mt-2 flex items-center text-sm ${audioLevel > 0 ? 'text-orange-500' : 'text-gray-400'}`}>
-                  <div className="flex space-x-1">
-                    {[...Array(5)].map((_, i) => (
-                      <div 
-                        key={i} 
-                        className={`w-1 h-3 rounded-full transition-all ${
-                          audioLevel > i * 20 ? 'bg-orange-500' : 'bg-gray-300'
-                        }`} 
-                        style={{ height: `${Math.min(8 + (i * 3), 20) + (audioLevel > i * 20 ? 4 : 0)}px` }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+      <div className="mb-4 text-center w-full">
+        <div className="text-amber-400 text-lg">{currentCount} / {targetCount}</div>
+        <div className="text-sm text-gray-400">{Math.round(progressPercentage)}% complete</div>
+      </div>
+      
+      {/* Advertisement placeholder as shown in the reference image */}
+      <div className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 mb-6">
+        <p className="text-center text-gray-400 text-sm">Advertisement</p>
+        <p className="text-center text-gray-500 text-xs">Place your ad here (middle position)</p>
+      </div>
+      
+      <div className="counter-display relative mb-10">
+        {/* Gold circle similar to the reference image */}
+        <div className="relative">
+          <div className="w-48 h-48 rounded-full bg-amber-500 flex items-center justify-center">
+            <div className="text-white text-5xl font-bold">
+              {/* Om symbol and counter */}
+              <div className="text-3xl mb-2">ॐ</div>
+              <div>{currentCount}</div>
             </div>
-            
-            <button 
-              onClick={toggleListening}
-              className={`absolute -bottom-5 left-1/2 transform -translate-x-1/2 flex items-center justify-center w-20 h-20 rounded-full ${
-                isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-orange-500 hover:bg-orange-600'
-              } text-white transition-colors shadow-lg`}
-            >
-              {isListening ? (
-                <MicOff className="w-8 h-8" />
-              ) : (
-                <Mic className="w-8 h-8" />
-              )}
-            </button>
           </div>
           
-          <button
-            onClick={toggleSensitivity}
-            className="flex items-center justify-center gap-2 mb-3 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-sm font-medium text-gray-700 transition-colors"
-          >
-            {getSensitivityIcon()}
-            <span>Sensitivity: {getSensitivityLabel()}</span>
-          </button>
-          
-          <div className="mt-2 text-center p-4 bg-orange-50 border border-orange-200 rounded-lg max-w-md w-full">
-            <p className="text-orange-800">
-              {isListening 
-                ? `Listening for your mantras. Speak clearly with at least 1 second pause between mantras. Current sensitivity: ${getSensitivityLabel()}.`
-                : "Press the microphone button to start counting your mantras with voice."}
-            </p>
-          </div>
-          
-          <div className="flex gap-4 mt-6">
-            <Button 
-              variant="outline" 
-              className="border-2 border-orange-400 text-orange-500"
-              onClick={resetCounter}
-            >
-              Reset Count
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-2 border-gray-300 text-gray-500"
-              onClick={handleReset}
-            >
-              Change Target
-            </Button>
-          </div>
-
-          <CompletionAlert 
-            isOpen={showCompletionAlert} 
-            targetCount={targetCount} 
-            onClose={() => setShowCompletionAlert(false)} 
-          />
+          {/* Listening indicator */}
+          {isListening && (
+            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-1">
+              {[...Array(5)].map((_, i) => (
+                <div 
+                  key={i} 
+                  className={`w-1 rounded-full transition-all ${
+                    audioLevel > i * 20 ? 'bg-white' : 'bg-amber-700'
+                  }`} 
+                  style={{ height: `${Math.min(8 + (i * 3), 20) + (audioLevel > i * 20 ? 4 : 0)}px` }}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+        
+        <button 
+          onClick={toggleListening}
+          className={`absolute -bottom-5 left-1/2 transform -translate-x-1/2 flex items-center justify-center w-16 h-16 rounded-full shadow-lg ${
+            isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-500 hover:bg-amber-600'
+          } text-black transition-colors`}
+        >
+          {isListening ? (
+            <MicOff className="w-7 h-7" />
+          ) : (
+            <Mic className="w-7 h-7" />
+          )}
+        </button>
+      </div>
+      
+      <button
+        onClick={toggleSensitivity}
+        className="flex items-center justify-center gap-2 mb-5 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-full text-sm font-medium text-amber-400 transition-colors"
+      >
+        {getSensitivityIcon()}
+        <span>Sensitivity: {getSensitivityLabel()}</span>
+      </button>
+      
+      <div className="flex gap-4">
+        <Button 
+          variant="outline" 
+          className="bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-zinc-700"
+          onClick={resetCounter}
+        >
+          Reset Count
+        </Button>
+        <Button 
+          variant="outline" 
+          className="bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-zinc-700"
+          onClick={handleReset}
+        >
+          Change Target
+        </Button>
+      </div>
+
+      <div className="mt-5 text-center p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg max-w-md w-full">
+        <p className="text-gray-300">
+          {isListening 
+            ? `Listening active (${getSensitivityLabel()} sensitivity). Speak clearly with pauses between mantras.`
+            : "Press the microphone button below the counter to start listening."}
+        </p>
+      </div>
+
+      <CompletionAlert 
+        isOpen={showCompletionAlert} 
+        targetCount={targetCount} 
+        onClose={() => setShowCompletionAlert(false)} 
+      />
     </div>
   );
 };
