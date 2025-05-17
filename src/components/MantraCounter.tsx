@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { SpeechDetection } from "@/utils/speechDetection";
 import TargetSelector from "@/components/TargetSelector";
 import CompletionAlert from "@/components/CompletionAlert";
-import { Plus } from "lucide-react";
+import { Plus, Mic, MicOff } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
 
 const MantraCounter: React.FC = () => {
   const [targetCount, setTargetCount] = useState<number | null>(null);
@@ -12,6 +13,7 @@ const MantraCounter: React.FC = () => {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [micPermission, setMicPermission] = useState<boolean | null>(null);
   const [showCompletionAlert, setShowCompletionAlert] = useState<boolean>(false);
+  const [audioLevel, setAudioLevel] = useState<number>(0);
   const speechDetection = useRef<SpeechDetection | null>(null);
   const lastSpeechTime = useRef<number>(0);
   const speechDetected = useRef<boolean>(false);
@@ -42,10 +44,12 @@ const MantraCounter: React.FC = () => {
       // Stop tracks immediately after permission granted
       stream.getTracks().forEach(track => track.stop());
       setMicPermission(true);
+      toast.success("Microphone access granted");
       return true;
     } catch (error) {
       console.error("Error requesting microphone permission:", error);
       setMicPermission(false);
+      toast.error("Microphone access denied. Please enable microphone access in your browser settings.");
       return false;
     }
   };
@@ -60,19 +64,27 @@ const MantraCounter: React.FC = () => {
       speechDetection.current = new SpeechDetection({
         onSpeechDetected: () => {
           speechDetected.current = true;
+          setAudioLevel(prev => Math.min(100, prev + 30)); // Visual feedback
           console.log("Speech detected");
         },
         onSpeechEnded: () => {
           if (speechDetected.current) {
-            // If we had speech and now it ended with a pause of at least 1 second
+            // If we had speech and now it ended with a pause of at least 0.8 second
             const now = Date.now();
-            if (now - lastSpeechTime.current > 1000) {
-              setCurrentCount(count => count + 1);
+            if (now - lastSpeechTime.current > 800) {
+              setCurrentCount(count => {
+                const newCount = count + 1;
+                toast.success(`Mantra counted: ${newCount}`, {
+                  duration: 1000,
+                });
+                return newCount;
+              });
               console.log("Mantra counted");
             }
             lastSpeechTime.current = now;
             speechDetected.current = false;
           }
+          setAudioLevel(0); // Reset visual feedback
         }
       });
     }
@@ -81,6 +93,9 @@ const MantraCounter: React.FC = () => {
     if (started) {
       setIsListening(true);
       lastSpeechTime.current = Date.now();
+      toast.success("Listening for mantras");
+    } else {
+      toast.error("Failed to start listening. Please try again.");
     }
   };
 
@@ -90,6 +105,8 @@ const MantraCounter: React.FC = () => {
       speechDetection.current = null;
     }
     setIsListening(false);
+    setAudioLevel(0);
+    toast.info("Stopped listening");
   };
 
   const toggleListening = async () => {
@@ -106,12 +123,16 @@ const MantraCounter: React.FC = () => {
     }
     setCurrentCount(0);
     setShowCompletionAlert(false);
+    toast.info("Counter reset");
   };
 
   const handleReset = () => {
     resetCounter();
     setTargetCount(null);
   };
+
+  // Calculate progress percentage
+  const progressPercentage = targetCount ? (currentCount / targetCount) * 100 : 0;
 
   return (
     <div className="flex flex-col items-center w-full max-w-md mx-auto px-4">
@@ -125,28 +146,67 @@ const MantraCounter: React.FC = () => {
           </div>
           
           <div className="counter-display relative mb-10">
-            <div className="flex justify-center items-center w-48 h-48 rounded-full border-8 border-blue-400 bg-white">
+            {/* Progress ring */}
+            <svg className="w-48 h-48" viewBox="0 0 100 100">
+              <circle 
+                cx="50" 
+                cy="50" 
+                r="45" 
+                fill="white"
+                stroke="#e2e8f0" 
+                strokeWidth="8"
+              />
+              <circle 
+                cx="50" 
+                cy="50" 
+                r="45" 
+                fill="transparent"
+                stroke="#f97316" 
+                strokeWidth="8"
+                strokeDasharray={`${Math.min(progressPercentage, 100) * 2.83} 283`}
+                strokeDashoffset="0"
+                transform="rotate(-90 50 50)"
+              />
+            </svg>
+            
+            <div className="absolute inset-0 flex flex-col justify-center items-center">
               <span className="text-5xl font-bold text-gray-700">{currentCount}</span>
+              {isListening && (
+                <div className={`mt-2 flex items-center text-sm ${audioLevel > 0 ? 'text-orange-500' : 'text-gray-400'}`}>
+                  <div className="flex space-x-1">
+                    {[...Array(5)].map((_, i) => (
+                      <div 
+                        key={i} 
+                        className={`w-1 h-3 rounded-full transition-all ${
+                          audioLevel > i * 20 ? 'bg-orange-500' : 'bg-gray-300'
+                        }`} 
+                        style={{ height: `${Math.min(8 + (i * 3), 20) + (audioLevel > i * 20 ? 4 : 0)}px` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+            
             <button 
               onClick={toggleListening}
-              className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 flex items-center justify-center w-20 h-20 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-lg"
+              className={`absolute -bottom-5 left-1/2 transform -translate-x-1/2 flex items-center justify-center w-20 h-20 rounded-full ${
+                isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-orange-500 hover:bg-orange-600'
+              } text-white transition-colors shadow-lg`}
             >
               {isListening ? (
-                <span className="text-lg">Stop</span>
+                <MicOff className="w-8 h-8" />
               ) : (
-                <div className="flex items-center justify-center">
-                  <Plus className="w-8 h-8" />
-                </div>
+                <Mic className="w-8 h-8" />
               )}
             </button>
           </div>
           
-          <div className="mt-8 text-center p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-md w-full">
-            <p className="text-blue-800">
+          <div className="mt-8 text-center p-4 bg-orange-50 border border-orange-200 rounded-lg max-w-md w-full">
+            <p className="text-orange-800">
               {isListening 
                 ? "Listening for your mantras. Speak clearly with at least 1 second pause between mantras."
-                : "Press the + button to start counting your mantras with voice."}
+                : "Press the microphone button to start counting your mantras with voice."}
             </p>
           </div>
           

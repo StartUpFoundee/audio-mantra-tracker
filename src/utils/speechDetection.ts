@@ -18,11 +18,13 @@ export class SpeechDetection {
   private onSpeechDetected: () => void;
   private onSpeechEnded: () => void;
   private minDecibels: number;
+  private consecutiveSilenceFrames = 0;
+  private consecutiveSpeechFrames = 0;
 
-  constructor({ onSpeechDetected, onSpeechEnded, minDecibels = -45 }: SpeechDetectionProps) {
+  constructor({ onSpeechDetected, onSpeechEnded, minDecibels = -50 }: SpeechDetectionProps) {
     this.onSpeechDetected = onSpeechDetected;
     this.onSpeechEnded = onSpeechEnded;
-    this.minDecibels = minDecibels;
+    this.minDecibels = minDecibels; // Make it more sensitive (-50 instead of -45)
   }
 
   public async start(): Promise<boolean> {
@@ -32,15 +34,24 @@ export class SpeechDetection {
       this.audioContext = new AudioContext();
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.minDecibels = this.minDecibels;
-      this.analyser.fftSize = 512;
+      this.analyser.fftSize = 1024; // Increased from 512 for better analysis
       
       // Request microphone access
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+      
       this.mediaStreamSource = this.audioContext.createMediaStreamSource(this.stream);
       this.mediaStreamSource.connect(this.analyser);
       
       this.isListening = true;
       this.detectSound();
+      
+      console.log("Speech detection started successfully");
       return true;
     } catch (error) {
       console.error("Error starting speech detection:", error);
@@ -79,6 +90,9 @@ export class SpeechDetection {
     this.analyser = null;
     this.isListening = false;
     this.isSpeaking = false;
+    this.consecutiveSilenceFrames = 0;
+    this.consecutiveSpeechFrames = 0;
+    console.log("Speech detection stopped");
   }
 
   private detectSound = (): void => {
@@ -87,19 +101,27 @@ export class SpeechDetection {
     const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
     this.analyser.getByteFrequencyData(dataArray);
 
-    // Calculate volume level
-    const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length;
+    // Calculate volume level - use the average of the loudest frequencies
+    const sortedData = [...dataArray].sort((a, b) => b - a);
+    const topFrequencies = sortedData.slice(0, Math.floor(dataArray.length * 0.2)); // Top 20%
+    const average = topFrequencies.reduce((acc, val) => acc + val, 0) / topFrequencies.length;
     
-    // Set a threshold for speech detection
-    const threshold = 15;  // Adjust based on testing
+    // Lower threshold to make it more sensitive
+    const threshold = 10;  // Reduced from 15
     const now = Date.now();
     
     if (average > threshold) {
       // Speech detected
-      if (!this.isSpeaking) {
+      this.consecutiveSpeechFrames++;
+      this.consecutiveSilenceFrames = 0;
+      
+      // Only trigger speech detection after a few consecutive frames to avoid false positives
+      if (this.consecutiveSpeechFrames > 3 && !this.isSpeaking) {
         this.isSpeaking = true;
         this.onSpeechDetected();
+        console.log("Speech detected", average);
       }
+      
       this.lastSpeechTime = now;
       
       // Clear any pending silence timeouts
@@ -107,10 +129,18 @@ export class SpeechDetection {
         clearTimeout(this.silenceTimeout);
         this.silenceTimeout = null;
       }
-    } else if (this.isSpeaking && now - this.lastSpeechTime > 1000) {
-      // No speech for 1 second, consider the speech ended
-      this.isSpeaking = false;
-      this.onSpeechEnded();
+    } else {
+      this.consecutiveSilenceFrames++;
+      this.consecutiveSpeechFrames = 0;
+      
+      // Consider speech ended after consistent silence
+      if (this.isSpeaking && this.consecutiveSilenceFrames > 30) { // About 0.5 seconds of silence
+        if (now - this.lastSpeechTime > 800) { // Reduced from 1000ms
+          this.isSpeaking = false;
+          this.onSpeechEnded();
+          console.log("Speech ended after", now - this.lastSpeechTime, "ms of silence");
+        }
+      }
     }
     
     this.animationFrame = requestAnimationFrame(this.detectSound);
