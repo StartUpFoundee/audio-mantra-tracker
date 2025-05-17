@@ -21,10 +21,10 @@ export class SpeechDetection {
   private consecutiveSilenceFrames = 0;
   private consecutiveSpeechFrames = 0;
 
-  constructor({ onSpeechDetected, onSpeechEnded, minDecibels = -50 }: SpeechDetectionProps) {
+  constructor({ onSpeechDetected, onSpeechEnded, minDecibels = -65 }: SpeechDetectionProps) {
     this.onSpeechDetected = onSpeechDetected;
     this.onSpeechEnded = onSpeechEnded;
-    this.minDecibels = minDecibels; // Make it more sensitive (-50 instead of -45)
+    this.minDecibels = minDecibels; // Increased sensitivity from -50 to -65
   }
 
   public async start(): Promise<boolean> {
@@ -34,9 +34,10 @@ export class SpeechDetection {
       this.audioContext = new AudioContext();
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.minDecibels = this.minDecibels;
-      this.analyser.fftSize = 1024; // Increased from 512 for better analysis
+      this.analyser.fftSize = 2048; // Doubled for better frequency resolution
+      this.analyser.smoothingTimeConstant = 0.9; // Increased from default 0.8 for better averaging
       
-      // Request microphone access
+      // Request microphone access with enhanced settings
       this.stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
           echoCancellation: true,
@@ -101,13 +102,13 @@ export class SpeechDetection {
     const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
     this.analyser.getByteFrequencyData(dataArray);
 
-    // Calculate volume level - use the average of the loudest frequencies
+    // Calculate volume level - enhanced algorithm
     const sortedData = [...dataArray].sort((a, b) => b - a);
-    const topFrequencies = sortedData.slice(0, Math.floor(dataArray.length * 0.2)); // Top 20%
+    const topFrequencies = sortedData.slice(0, Math.floor(dataArray.length * 0.3)); // Top 30% instead of 20%
     const average = topFrequencies.reduce((acc, val) => acc + val, 0) / topFrequencies.length;
     
-    // Lower threshold to make it more sensitive
-    const threshold = 10;  // Reduced from 15
+    // Lower threshold to make it much more sensitive
+    const threshold = 5;  // Reduced from 10 to 5
     const now = Date.now();
     
     if (average > threshold) {
@@ -115,8 +116,8 @@ export class SpeechDetection {
       this.consecutiveSpeechFrames++;
       this.consecutiveSilenceFrames = 0;
       
-      // Only trigger speech detection after a few consecutive frames to avoid false positives
-      if (this.consecutiveSpeechFrames > 3 && !this.isSpeaking) {
+      // Only trigger speech detection after fewer consecutive frames to be more responsive
+      if (this.consecutiveSpeechFrames > 2 && !this.isSpeaking) { // Reduced from 3 to 2
         this.isSpeaking = true;
         this.onSpeechDetected();
         console.log("Speech detected", average);
@@ -134,8 +135,8 @@ export class SpeechDetection {
       this.consecutiveSpeechFrames = 0;
       
       // Consider speech ended after consistent silence
-      if (this.isSpeaking && this.consecutiveSilenceFrames > 30) { // About 0.5 seconds of silence
-        if (now - this.lastSpeechTime > 800) { // Reduced from 1000ms
+      if (this.isSpeaking && this.consecutiveSilenceFrames > 25) { // Reduced from 30 to 25 frames
+        if (now - this.lastSpeechTime > 800) { // Kept at 800ms 
           this.isSpeaking = false;
           this.onSpeechEnded();
           console.log("Speech ended after", now - this.lastSpeechTime, "ms of silence");

@@ -16,7 +16,7 @@ const Index: React.FC = () => {
       
       <footer className="py-4 text-center text-gray-500 text-sm">
         <p>Created with love for spiritual practice</p>
-        <p className="mt-1 text-xs">Speak clearly and pause between mantras for best results</p>
+        <p className="mt-1 text-xs">Adjust microphone sensitivity if needed for longer distances</p>
       </footer>
     </div>
   );
