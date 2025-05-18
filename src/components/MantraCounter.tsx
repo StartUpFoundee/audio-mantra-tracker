@@ -15,9 +15,31 @@ const MantraCounter: React.FC = () => {
   const [showCompletionAlert, setShowCompletionAlert] = useState<boolean>(false);
   const [audioLevel, setAudioLevel] = useState<number>(0);
   const [sensitivityLevel, setSensitivityLevel] = useState<number>(2); // 0: low, 1: medium, 2: high
+  const [lifetimeCount, setLifetimeCount] = useState<number>(0);
+  const [todayCount, setTodayCount] = useState<number>(0);
   const speechDetection = useRef<SpeechDetection | null>(null);
   const lastSpeechTime = useRef<number>(0);
   const speechDetected = useRef<boolean>(false);
+
+  // Load saved counts from localStorage on component mount
+  useEffect(() => {
+    const savedLifetimeCount = localStorage.getItem('lifetimeCount');
+    const savedTodayCount = localStorage.getItem('todayCount');
+    const savedLastDate = localStorage.getItem('lastCountDate');
+    
+    if (savedLifetimeCount) {
+      setLifetimeCount(parseInt(savedLifetimeCount, 10));
+    }
+    
+    const today = new Date().toDateString();
+    if (savedTodayCount && savedLastDate === today) {
+      setTodayCount(parseInt(savedTodayCount, 10));
+    } else {
+      // Reset today's count if it's a new day
+      localStorage.setItem('todayCount', '0');
+      localStorage.setItem('lastCountDate', today);
+    }
+  }, []);
 
   useEffect(() => {
     // Check if target is reached
@@ -79,6 +101,21 @@ const MantraCounter: React.FC = () => {
                   duration: 1000,
                   style: { background: '#262626', color: '#fcd34d' },
                 });
+                
+                // Update lifetime and today counts
+                setLifetimeCount(prevLifetime => {
+                  const newLifetime = prevLifetime + 1;
+                  localStorage.setItem('lifetimeCount', newLifetime.toString());
+                  return newLifetime;
+                });
+                
+                setTodayCount(prevToday => {
+                  const newToday = prevToday + 1;
+                  localStorage.setItem('todayCount', newToday.toString());
+                  localStorage.setItem('lastCountDate', new Date().toDateString());
+                  return newToday;
+                });
+                
                 return newCount;
               });
               console.log("Mantra counted");
@@ -186,10 +223,22 @@ const MantraCounter: React.FC = () => {
         <div className="text-sm text-gray-400">{Math.round(progressPercentage)}% complete</div>
       </div>
       
+      <div className="stats w-full flex gap-4 mb-6">
+        <div className="stat flex-1 bg-zinc-800/80 rounded-lg p-3 text-center">
+          <h3 className="text-xs text-gray-400">Lifetime</h3>
+          <p className="text-lg font-bold text-amber-400">{lifetimeCount}</p>
+        </div>
+        
+        <div className="stat flex-1 bg-zinc-800/80 rounded-lg p-3 text-center">
+          <h3 className="text-xs text-gray-400">Today</h3>
+          <p className="text-lg font-bold text-amber-400">{todayCount}</p>
+        </div>
+      </div>
+      
       {/* Advertisement placeholder as shown in the reference image */}
       <div className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 mb-6">
         <p className="text-center text-gray-400 text-sm">Advertisement</p>
-        <p className="text-center text-gray-500 text-xs">Place your ad here (middle position)</p>
+        <p className="text-center text-gray-500 text-xs">Place your ad here</p>
       </div>
       
       <div className="counter-display relative mb-10">
@@ -233,6 +282,19 @@ const MantraCounter: React.FC = () => {
         </button>
       </div>
       
+      <div className="text-center mb-5">
+        <p className="text-gray-300">
+          {isListening 
+            ? "Listening active - Speak your mantra with 1 second pauses"
+            : "Press the microphone button to start listening"}
+        </p>
+        <p className="text-xs text-gray-400 mt-1">
+          {isListening
+            ? "ध्वनि सक्रिय - 1 सेकंड के अंतराल के साथ मंत्र का जाप करें"
+            : "सुनना शुरू करने के लिए माइक्रोफोन बटन दबाएं"}
+        </p>
+      </div>
+      
       <button
         onClick={toggleSensitivity}
         className="flex items-center justify-center gap-2 mb-5 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-full text-sm font-medium text-amber-400 transition-colors"
@@ -256,14 +318,6 @@ const MantraCounter: React.FC = () => {
         >
           Change Target
         </Button>
-      </div>
-
-      <div className="mt-5 text-center p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg max-w-md w-full">
-        <p className="text-gray-300">
-          {isListening 
-            ? `Listening active (${getSensitivityLabel()} sensitivity). Speak clearly with pauses between mantras.`
-            : "Press the microphone button below the counter to start listening."}
-        </p>
       </div>
 
       <CompletionAlert 
