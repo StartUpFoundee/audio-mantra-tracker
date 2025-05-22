@@ -141,6 +141,13 @@ const WelcomeScreen: React.FC = () => {
     }
   };
 
+  const startYear = 1900;
+  const currentYear = new Date().getFullYear();
+  const yearsRange = Array.from(
+    { length: currentYear - startYear + 1 },
+    (_, i) => startYear + i
+  );
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white p-4">
       <div className="w-full max-w-md bg-zinc-900 rounded-lg border border-zinc-700 p-6 shadow-lg">
@@ -148,10 +155,10 @@ const WelcomeScreen: React.FC = () => {
         <p className="text-center text-gray-300 mb-6">Begin your spiritual journey</p>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="create" className="text-amber-400">Create</TabsTrigger>
-            <TabsTrigger value="login" className="text-amber-400">Login</TabsTrigger>
-            <TabsTrigger value="recover" className="text-amber-400">Recover ID</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-zinc-800">
+            <TabsTrigger value="create" className="text-amber-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">Create</TabsTrigger>
+            <TabsTrigger value="login" className="text-amber-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">Login</TabsTrigger>
+            <TabsTrigger value="recover" className="text-amber-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">Recover ID</TabsTrigger>
           </TabsList>
 
           <TabsContent value="create" className="space-y-4">
@@ -177,13 +184,36 @@ const WelcomeScreen: React.FC = () => {
                     {dob ? format(dob, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-zinc-800 border-zinc-700 pointer-events-auto">
+                <PopoverContent className="w-auto p-0 bg-zinc-800 border-zinc-700">
+                  <div className="bg-zinc-800 p-2 border-b border-zinc-700">
+                    <select 
+                      className="bg-zinc-700 text-white p-1 rounded w-full"
+                      value={dob ? dob.getFullYear() : currentYear}
+                      onChange={(e) => {
+                        const year = parseInt(e.target.value);
+                        if (dob) {
+                          const newDate = new Date(dob);
+                          newDate.setFullYear(year);
+                          setDOB(newDate);
+                        } else {
+                          setDOB(new Date(year, 0, 1));
+                        }
+                      }}
+                    >
+                      {yearsRange.reverse().map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                  </div>
                   <Calendar
                     mode="single"
                     selected={dob}
                     onSelect={setDOB}
                     initialFocus
-                    className="p-3 pointer-events-auto"
+                    className="bg-zinc-800"
+                    captionLayout="dropdown-buttons"
+                    fromYear={1900}
+                    toYear={currentYear}
                   />
                 </PopoverContent>
               </Popover>
@@ -286,13 +316,36 @@ const WelcomeScreen: React.FC = () => {
                     {recoverDOB ? format(recoverDOB, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-zinc-800 border-zinc-700 pointer-events-auto">
+                <PopoverContent className="w-auto p-0 bg-zinc-800 border-zinc-700">
+                  <div className="bg-zinc-800 p-2 border-b border-zinc-700">
+                    <select 
+                      className="bg-zinc-700 text-white p-1 rounded w-full"
+                      value={recoverDOB ? recoverDOB.getFullYear() : currentYear}
+                      onChange={(e) => {
+                        const year = parseInt(e.target.value);
+                        if (recoverDOB) {
+                          const newDate = new Date(recoverDOB);
+                          newDate.setFullYear(year);
+                          setRecoverDOB(newDate);
+                        } else {
+                          setRecoverDOB(new Date(year, 0, 1));
+                        }
+                      }}
+                    >
+                      {yearsRange.reverse().map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                  </div>
                   <Calendar
                     mode="single"
                     selected={recoverDOB}
                     onSelect={setRecoverDOB}
                     initialFocus
-                    className="p-3 pointer-events-auto"
+                    className="bg-zinc-800"
+                    captionLayout="dropdown-buttons"
+                    fromYear={1900}
+                    toYear={currentYear}
                   />
                 </PopoverContent>
               </Popover>

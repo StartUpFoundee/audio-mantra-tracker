@@ -43,12 +43,12 @@ const ProfileHeader: React.FC = () => {
         <DropdownMenuTrigger asChild>
           <Button 
             variant="ghost" 
-            size="icon" 
-            className="bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center w-10 h-10"
+            className="bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center gap-2 pl-2 pr-3"
           >
             <div className="text-2xl" title={user.name}>
               {user.symbolImage}
             </div>
+            <span className="text-amber-400 text-sm font-medium">{user.name}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56 bg-zinc-800 border-zinc-700 text-white mr-2">
