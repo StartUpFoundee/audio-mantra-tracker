@@ -1,9 +1,10 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import MantraCounter from "@/components/MantraCounter";
+import UserAwareMantraCounter from "@/components/MantraCounter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home } from "lucide-react";
+import ProfileHeader from "@/components/ProfileHeader";
 
 const AudioCountPage: React.FC = () => {
   const navigate = useNavigate();
@@ -20,18 +21,21 @@ const AudioCountPage: React.FC = () => {
           <ArrowLeft className="h-6 w-6" />
         </Button>
         <h1 className="text-xl font-bold text-amber-400">Audio Counter</h1>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          className="text-amber-400 hover:bg-zinc-800"
-          onClick={() => navigate('/')}
-        >
-          <Home className="h-6 w-6" />
-        </Button>
+        <div className="flex gap-2 items-center">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-amber-400 hover:bg-zinc-800"
+            onClick={() => navigate('/')}
+          >
+            <Home className="h-6 w-6" />
+          </Button>
+          <ProfileHeader />
+        </div>
       </header>
       
       <main className="flex-1 flex items-center justify-center px-4 pb-12">
-        <MantraCounter />
+        <UserAwareMantraCounter />
       </main>
     </div>
   );

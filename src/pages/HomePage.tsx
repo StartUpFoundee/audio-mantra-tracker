@@ -1,17 +1,49 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Mic, Hand, Infinity, Clock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import ProfileHeader from "@/components/ProfileHeader";
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [lifetimeCount, setLifetimeCount] = useState(0);
+  const [todayCount, setTodayCount] = useState(0);
+  
+  // Load saved counts from localStorage or user data
+  useEffect(() => {
+    if (user && user.chantingStats) {
+      // If user is logged in, use their stats
+      setLifetimeCount(user.chantingStats.lifetime || 0);
+      setTodayCount(user.chantingStats.today || 0);
+    } else {
+      // Otherwise use localStorage directly
+      const savedLifetimeCount = localStorage.getItem('lifetimeCount');
+      const savedTodayCount = localStorage.getItem('todayCount');
+      
+      if (savedLifetimeCount) {
+        setLifetimeCount(parseInt(savedLifetimeCount, 10));
+      }
+      
+      if (savedTodayCount) {
+        setTodayCount(parseInt(savedTodayCount, 10));
+      }
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-white">
-      <header className="py-6 text-center">
-        <h1 className="text-3xl font-bold text-amber-400">Mantra Counter</h1>
-        <p className="text-gray-300 mt-2">Count your spiritual practice with ease</p>
+      <header className="py-4 px-4 flex justify-between items-center">
+        <div className="w-10"></div> {/* Spacer for centering */}
+        <h1 className="text-2xl font-bold text-amber-400">Mantra Counter</h1>
+        <ProfileHeader />
+      </header>
+      
+      <header className="pt-2 text-center">
+        <p className="text-gray-300 mt-1 mb-2">
+          {user ? `Welcome, ${user.name}` : 'Count your spiritual practice with ease'}
+        </p>
       </header>
       
       <main className="flex-1 flex flex-col items-center justify-center px-4 pb-12 gap-8">
@@ -21,7 +53,7 @@ const HomePage: React.FC = () => {
               <Infinity className="w-5 h-5 text-amber-400" />
               <h2 className="text-gray-300 font-medium">Lifetime Chants</h2>
             </div>
-            <p className="text-3xl font-bold text-amber-400">0</p>
+            <p className="text-3xl font-bold text-amber-400">{lifetimeCount}</p>
           </div>
           
           <div className="stat flex-1 bg-zinc-800/80 rounded-lg p-4 border border-zinc-700 text-center">
@@ -29,7 +61,7 @@ const HomePage: React.FC = () => {
               <Clock className="w-5 h-5 text-amber-400" />
               <h2 className="text-gray-300 font-medium">Today</h2>
             </div>
-            <p className="text-3xl font-bold text-amber-400">0</p>
+            <p className="text-3xl font-bold text-amber-400">{todayCount}</p>
           </div>
         </div>
         
