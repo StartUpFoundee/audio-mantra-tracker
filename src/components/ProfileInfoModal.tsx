@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/sonner';
 import { UserData } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { Calendar, Clock, UserIcon } from 'lucide-react';
+import { Calendar, Clock, UserIcon, Copy, Check } from 'lucide-react';
 
 interface ProfileInfoModalProps {
   isOpen: boolean;
@@ -20,6 +21,18 @@ interface ProfileInfoModalProps {
 }
 
 const ProfileInfoModal: React.FC<ProfileInfoModalProps> = ({ isOpen, onClose, user }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(user.id);
+    setCopied(true);
+    toast.success("ID copied to clipboard!");
+    
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-zinc-900 text-white border border-zinc-700 sm:max-w-md">
@@ -36,9 +49,23 @@ const ProfileInfoModal: React.FC<ProfileInfoModalProps> = ({ isOpen, onClose, us
           <div className="w-full space-y-4">
             <div className="bg-zinc-800 p-3 rounded-lg border border-zinc-700 flex items-center">
               <UserIcon className="h-5 w-5 text-amber-400 mr-3" />
-              <div>
+              <div className="flex-1">
                 <p className="text-sm text-gray-400">Your Identity ID</p>
-                <p className="text-lg text-amber-400 font-mono">{user.id}</p>
+                <div className="flex justify-between items-center">
+                  <p className="text-lg text-amber-400 font-mono">{user.id}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 ml-2 bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
+                    onClick={handleCopyId}
+                  >
+                    {copied ? (
+                      <><Check size={14} className="mr-1" /> Copied</>
+                    ) : (
+                      <><Copy size={14} className="mr-1" /> Copy ID</>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
             

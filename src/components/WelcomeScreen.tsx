@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar } from "@/components/ui/calendar";
@@ -156,9 +155,24 @@ const WelcomeScreen: React.FC = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6 bg-zinc-800">
-            <TabsTrigger value="create" className="text-amber-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">Create</TabsTrigger>
-            <TabsTrigger value="login" className="text-amber-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">Login</TabsTrigger>
-            <TabsTrigger value="recover" className="text-amber-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white">Recover ID</TabsTrigger>
+            <TabsTrigger 
+              value="create" 
+              className="text-amber-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+            >
+              Create
+            </TabsTrigger>
+            <TabsTrigger 
+              value="login" 
+              className="text-amber-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+            >
+              Login
+            </TabsTrigger>
+            <TabsTrigger 
+              value="recover" 
+              className="text-amber-400 data-[state=active]:bg-zinc-700 data-[state=active]:text-white"
+            >
+              Recover ID
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="create" className="space-y-4">
@@ -187,7 +201,7 @@ const WelcomeScreen: React.FC = () => {
                 <PopoverContent className="w-auto p-0 bg-zinc-800 border-zinc-700">
                   <div className="bg-zinc-800 p-2 border-b border-zinc-700">
                     <select 
-                      className="bg-zinc-700 text-white p-1 rounded w-full"
+                      className="bg-zinc-700 text-amber-300 p-1 rounded w-full"
                       value={dob ? dob.getFullYear() : currentYear}
                       onChange={(e) => {
                         const year = parseInt(e.target.value);
@@ -319,7 +333,7 @@ const WelcomeScreen: React.FC = () => {
                 <PopoverContent className="w-auto p-0 bg-zinc-800 border-zinc-700">
                   <div className="bg-zinc-800 p-2 border-b border-zinc-700">
                     <select 
-                      className="bg-zinc-700 text-white p-1 rounded w-full"
+                      className="bg-zinc-700 text-amber-300 p-1 rounded w-full"
                       value={recoverDOB ? recoverDOB.getFullYear() : currentYear}
                       onChange={(e) => {
                         const year = parseInt(e.target.value);
