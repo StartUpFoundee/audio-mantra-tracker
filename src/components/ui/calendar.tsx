@@ -22,28 +22,28 @@ function Calendar({
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium text-amber-400", // Changed from text-white to text-amber-400 for better visibility
+        caption_label: "text-sm font-medium text-amber-400",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-zinc-800 text-amber-400 border-zinc-600 p-0 opacity-85 hover:opacity-100 hover:bg-zinc-700" // Changed from text-white to text-amber-400
+          "h-7 w-7 bg-zinc-800 text-amber-400 border-zinc-600 p-0 opacity-85 hover:opacity-100 hover:bg-zinc-700"
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
         head_cell:
-          "text-amber-400 rounded-md w-9 font-medium text-[0.8rem]", // Changed from text-white to text-amber-400
+          "text-amber-400 rounded-md w-9 font-medium text-[0.8rem]",
         row: "flex w-full mt-2",
         cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal text-amber-100 hover:bg-zinc-700 aria-selected:opacity-100" // Changed from text-white to text-amber-100
+          "h-9 w-9 p-0 font-normal text-amber-100 hover:bg-zinc-700 aria-selected:opacity-100"
         ),
         day_range_end: "day-range-end",
         day_selected:
           "bg-amber-500 text-zinc-900 hover:bg-amber-500 hover:text-zinc-900 focus:bg-amber-500 focus:text-zinc-900",
-        day_today: "bg-zinc-700 text-amber-400 font-bold border border-amber-400", // Enhanced today indicator
+        day_today: "bg-zinc-700 text-amber-400 font-bold border border-amber-400",
         day_outside:
           "day-outside text-zinc-400 opacity-50 aria-selected:bg-accent/50 aria-selected:text-zinc-400 aria-selected:opacity-30",
         day_disabled: "text-zinc-500 opacity-50",
@@ -53,8 +53,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4 text-amber-400" />, // Changed from text-white to text-amber-400
-        IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4 text-amber-400" />, // Changed from text-white to text-amber-400
+        IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4 text-amber-400" />,
+        IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4 text-amber-400" />,
       }}
       {...props}
     />

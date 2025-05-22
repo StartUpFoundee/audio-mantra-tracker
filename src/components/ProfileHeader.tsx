@@ -11,14 +11,15 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, HelpCircle, Download, Copy, Check } from 'lucide-react';
+import { User, LogOut, HelpCircle, Download, Copy, Check, MessageSquareText, Bell, BellOff } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { exportUserData } from '@/utils/identityUtils';
 import ProfileInfoModal from './ProfileInfoModal';
 import IdentityGuide from './IdentityGuide';
+import { Switch } from '@/components/ui/switch';
 
 const ProfileHeader: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserPreferences } = useAuth();
   const navigate = useNavigate();
   const [showProfileInfo, setShowProfileInfo] = useState(false);
   const [showIdentityGuide, setShowIdentityGuide] = useState(false);
@@ -48,6 +49,22 @@ const ProfileHeader: React.FC = () => {
       setTimeout(() => {
         setCopied(false);
       }, 2000);
+    }
+  };
+
+  const toggleDailyPopups = () => {
+    if (user) {
+      const newValue = !user.showDailyPopup;
+      updateUserPreferences({ showDailyPopup: newValue });
+      toast.success(newValue ? "Daily messages enabled" : "Daily messages disabled");
+    }
+  };
+
+  const toggleLanguage = () => {
+    if (user) {
+      const newLanguage = user.preferredLanguage === 'en' ? 'hi' : 'en';
+      updateUserPreferences({ preferredLanguage: newLanguage });
+      toast.success(`Language set to ${newLanguage === 'en' ? 'English' : 'Hindi'}`);
     }
   };
 
@@ -102,6 +119,37 @@ const ProfileHeader: React.FC = () => {
             <Download className="mr-2 h-4 w-4 text-amber-400" />
             <span>Save Identity</span>
           </DropdownMenuItem>
+          
+          <DropdownMenuSeparator className="bg-zinc-700"/>
+          
+          <DropdownMenuItem className="hover:bg-zinc-700 text-gray-200 cursor-default flex justify-between">
+            <div className="flex items-center">
+              {user.showDailyPopup ? (
+                <Bell className="mr-2 h-4 w-4 text-amber-400" />
+              ) : (
+                <BellOff className="mr-2 h-4 w-4 text-amber-400" />
+              )}
+              <span>Daily Messages</span>
+            </div>
+            <Switch 
+              checked={user.showDailyPopup} 
+              onCheckedChange={toggleDailyPopups}
+              className="data-[state=checked]:bg-amber-500"
+            />
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem className="hover:bg-zinc-700 text-gray-200 cursor-default flex justify-between">
+            <div className="flex items-center">
+              <MessageSquareText className="mr-2 h-4 w-4 text-amber-400" />
+              <span>{user.preferredLanguage === 'en' ? 'English' : 'हिंदी'}</span>
+            </div>
+            <Switch 
+              checked={user.preferredLanguage === 'hi'} 
+              onCheckedChange={toggleLanguage}
+              className="data-[state=checked]:bg-amber-500"
+            />
+          </DropdownMenuItem>
+          
           <DropdownMenuSeparator className="bg-zinc-700"/>
           <DropdownMenuItem 
             className="hover:bg-zinc-700 text-gray-200 cursor-pointer"

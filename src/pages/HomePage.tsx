@@ -1,15 +1,18 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Mic, Hand, Infinity, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProfileHeader from "@/components/ProfileHeader";
+import DailyGreetingPopup from "@/components/DailyGreetingPopup";
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, shouldShowGreeting, setShouldShowGreeting } = useAuth();
   const [lifetimeCount, setLifetimeCount] = useState(0);
   const [todayCount, setTodayCount] = useState(0);
+  const [showGreeting, setShowGreeting] = useState(false);
   
   // Load saved counts from localStorage or user data
   useEffect(() => {
@@ -30,7 +33,21 @@ const HomePage: React.FC = () => {
         setTodayCount(parseInt(savedTodayCount, 10));
       }
     }
-  }, [user]);
+    
+    // Show greeting popup with a slight delay if needed
+    if (shouldShowGreeting) {
+      const timer = setTimeout(() => {
+        setShowGreeting(true);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, shouldShowGreeting]);
+
+  const handleCloseGreeting = () => {
+    setShowGreeting(false);
+    setShouldShowGreeting(false);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-white">
@@ -104,6 +121,8 @@ const HomePage: React.FC = () => {
       <footer className="py-4 text-center text-gray-400 text-sm">
         <p>Created with love for spiritual practice</p>
       </footer>
+
+      <DailyGreetingPopup isOpen={showGreeting} onClose={handleCloseGreeting} />
     </div>
   );
 };

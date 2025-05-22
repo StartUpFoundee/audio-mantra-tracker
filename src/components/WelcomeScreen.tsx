@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar } from "@/components/ui/calendar";
@@ -13,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { spiritualSymbols } from '@/data/spiritualSymbols';
-import { generateUserID, doesIdMatchDOB } from '@/utils/identityUtils';
+import { generateUserID, doesIdMatchDOB, doesIdMatchName } from '@/utils/identityUtils';
 import { useAuth, UserData } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Check, AlertCircle } from 'lucide-react';
@@ -34,6 +35,7 @@ const WelcomeScreen: React.FC = () => {
   const [recoverDOB, setRecoverDOB] = useState<Date | undefined>(undefined);
   const [possibleIds, setPossibleIds] = useState<string[]>([]);
   const [showRecoveryResults, setShowRecoveryResults] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreateIdentity = () => {
     if (!name || !dob || !selectedSymbol) {
@@ -41,7 +43,9 @@ const WelcomeScreen: React.FC = () => {
       return;
     }
 
-    const newId = generateUserID(dob);
+    setIsSubmitting(true);
+    const nameInitials = name.substring(0, 2).toUpperCase();
+    const newId = generateUserID(dob, name);
     setGeneratedId(newId);
 
     const symbolObject = spiritualSymbols.find(s => s.id === selectedSymbol)!;
@@ -50,11 +54,14 @@ const WelcomeScreen: React.FC = () => {
     const userData: UserData = {
       id: newId,
       name: name,
+      nameInitials: nameInitials,
       dob: format(dob, 'yyyy-MM-dd'),
       symbol: selectedSymbol,
       symbolImage: symbolObject.image,
       createdAt: new Date().toISOString(),
       lastLogin: new Date().toISOString(),
+      showDailyPopup: true,
+      preferredLanguage: 'en',
       chantingStats: {
         lifetime: 0,
         today: 0,
@@ -77,6 +84,7 @@ const WelcomeScreen: React.FC = () => {
 
     loginWithData(userData);
     setShowIdDialog(true);
+    setIsSubmitting(false);
   };
 
   const handleExistingLogin = () => {
@@ -85,11 +93,13 @@ const WelcomeScreen: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     const success = login(userId);
     if (success) {
       navigate('/');
     } else {
       setError('Invalid ID. Please try again or recover your ID.');
+      setIsSubmitting(false);
     }
   };
 
@@ -99,23 +109,30 @@ const WelcomeScreen: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     // Search for matching IDs in localStorage
     const userData = localStorage.getItem('chantTrackerUserData');
+    const foundIds: string[] = [];
+    
     if (userData) {
-      const parsedData = JSON.parse(userData);
-      if (
-        parsedData.name.toLowerCase() === recoverName.toLowerCase() &&
-        doesIdMatchDOB(parsedData.id, recoverDOB)
-      ) {
-        setPossibleIds([parsedData.id]);
-      } else {
-        setPossibleIds([]);
+      try {
+        const parsedData = JSON.parse(userData);
+        
+        // Check if the stored data matches both name and DOB
+        if (doesIdMatchDOB(parsedData.id, recoverDOB) && 
+            (doesIdMatchName(parsedData.id, recoverName) || 
+             parsedData.name.toLowerCase() === recoverName.toLowerCase())) {
+          foundIds.push(parsedData.id);
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
       }
-    } else {
-      setPossibleIds([]);
     }
-
+    
+    setPossibleIds(foundIds);
     setShowRecoveryResults(true);
+    setIsSubmitting(false);
   };
 
   const handleContinueAsGuest = () => {
@@ -264,10 +281,11 @@ const WelcomeScreen: React.FC = () => {
 
             <div className="pt-2">
               <Button 
-                className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium" 
+                className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium"
                 onClick={handleCreateIdentity}
+                disabled={isSubmitting}
               >
-                Create Identity
+                {isSubmitting ? 'Creating...' : 'Create Identity'}
               </Button>
             </div>
           </TabsContent>
@@ -277,7 +295,7 @@ const WelcomeScreen: React.FC = () => {
               <Label htmlFor="userId" className="text-gray-300">Your Identity ID</Label>
               <Input 
                 id="userId" 
-                placeholder="Format: DDMMYYYY_XXXX" 
+                placeholder="Format: DDMMYYYY_XX_XXXX" 
                 value={userId} 
                 onChange={(e) => setUserId(e.target.value)}
                 className="bg-zinc-800 border-zinc-700 focus:border-amber-500 text-white" 
@@ -290,10 +308,11 @@ const WelcomeScreen: React.FC = () => {
             </div>
             
             <Button 
-              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium" 
+              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium"
               onClick={handleExistingLogin}
+              disabled={isSubmitting}
             >
-              Login
+              {isSubmitting ? 'Logging in...' : 'Login'}
             </Button>
 
             <div className="text-center">
@@ -395,10 +414,11 @@ const WelcomeScreen: React.FC = () => {
             )}
 
             <Button 
-              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium" 
+              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-medium"
               onClick={handleRecoverID}
+              disabled={isSubmitting}
             >
-              Recover ID
+              {isSubmitting ? 'Searching...' : 'Recover ID'}
             </Button>
           </TabsContent>
         </Tabs>
@@ -419,13 +439,16 @@ const WelcomeScreen: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="text-amber-400 text-2xl text-center">Your Identity Created!</DialogTitle>
             <DialogDescription className="text-center text-gray-300">
-              <div className="mt-2 p-4 bg-zinc-800 rounded-lg border border-amber-500">
+              <div className="mt-2 p-4 bg-zinc-800 rounded-lg border border-amber-500/30">
                 <p className="mb-2">Your unique ID is:</p>
                 <p className="text-xl font-mono text-amber-400 bg-zinc-700 p-2 rounded">{generatedId}</p>
+                <p className="mt-2 text-xs text-amber-200">
+                  Format: [Birthday]_[Name Initials]_[Unique Code]
+                </p>
               </div>
               <p className="mt-4">
                 Please note down this ID to access your profile in the future.
-                Remember, it starts with your birthdate!
+                Remember, it starts with your birthdate and includes your name initials!
               </p>
             </DialogDescription>
           </DialogHeader>

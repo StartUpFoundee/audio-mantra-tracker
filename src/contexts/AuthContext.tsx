@@ -10,11 +10,14 @@ interface SpiritualSymbol {
 export interface UserData {
   id: string;
   name: string;
+  nameInitials: string;
   dob: string;
   symbol: string;
   symbolImage: string;
   createdAt: string;
   lastLogin: string;
+  showDailyPopup: boolean;
+  preferredLanguage: 'en' | 'hi';
   chantingStats: {
     lifetime: number;
     today: number;
@@ -28,6 +31,9 @@ interface AuthContextType {
   loginWithData: (userData: UserData) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  shouldShowGreeting: boolean;
+  setShouldShowGreeting: (value: boolean) => void;
+  updateUserPreferences: (preferences: Partial<Pick<UserData, 'showDailyPopup' | 'preferredLanguage'>>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,14 +49,19 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserData | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [shouldShowGreeting, setShouldShowGreeting] = useState<boolean>(false);
 
   useEffect(() => {
     // Check for user data in localStorage on component mount
     const userData = localStorage.getItem('chantTrackerUserData');
     if (userData) {
       const parsedData = JSON.parse(userData);
-      setUser(parsedData);
-      setIsAuthenticated(true);
+      
+      // Check if we should show the greeting popup (once per day)
+      const lastLogin = new Date(parsedData.lastLogin);
+      const today = new Date();
+      const shouldGreet = parsedData.showDailyPopup !== false && 
+        (lastLogin.toDateString() !== today.toDateString());
       
       // Update last login time
       const updatedUserData = {
@@ -58,6 +69,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastLogin: new Date().toISOString()
       };
       localStorage.setItem('chantTrackerUserData', JSON.stringify(updatedUserData));
+      
+      setUser(updatedUserData);
+      setIsAuthenticated(true);
+      setShouldShowGreeting(shouldGreet);
     }
   }, []);
 
@@ -66,10 +81,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (userData) {
       const parsedData = JSON.parse(userData);
       if (parsedData.id === id) {
+        const today = new Date();
+        const lastLogin = new Date(parsedData.lastLogin);
+        const shouldGreet = parsedData.showDailyPopup !== false && 
+          (lastLogin.toDateString() !== today.toDateString());
+        
         parsedData.lastLogin = new Date().toISOString();
         localStorage.setItem('chantTrackerUserData', JSON.stringify(parsedData));
         setUser(parsedData);
         setIsAuthenticated(true);
+        setShouldShowGreeting(shouldGreet);
         return true;
       }
     }
@@ -88,19 +109,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
     
+    // Set default preferences if not provided
+    if (userData.showDailyPopup === undefined) {
+      userData.showDailyPopup = true;
+    }
+    
+    if (!userData.preferredLanguage) {
+      userData.preferredLanguage = 'en';
+    }
+    
     localStorage.setItem('chantTrackerUserData', JSON.stringify(userData));
     setUser(userData);
     setIsAuthenticated(true);
+    setShouldShowGreeting(false); // Don't show greeting on first login/creation
   };
 
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
+    setShouldShowGreeting(false);
     // Don't remove from localStorage, just log out the session
   };
 
+  const updateUserPreferences = (preferences: Partial<Pick<UserData, 'showDailyPopup' | 'preferredLanguage'>>) => {
+    if (user) {
+      const updatedUser = {
+        ...user,
+        ...preferences
+      };
+      localStorage.setItem('chantTrackerUserData', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, loginWithData, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      loginWithData, 
+      logout, 
+      isAuthenticated,
+      shouldShowGreeting,
+      setShouldShowGreeting,
+      updateUserPreferences 
+    }}>
       {children}
     </AuthContext.Provider>
   );
