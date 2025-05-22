@@ -64,3 +64,34 @@ export function exportUserData(userData: any): void {
   linkElement.click();
   linkElement.remove();
 }
+
+// Function to copy text to clipboard
+export function copyToClipboard(text: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      // Use the Clipboard API when available and in secure context
+      navigator.clipboard.writeText(text)
+        .then(() => resolve(true))
+        .catch(() => resolve(false));
+    } else {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        resolve(successful);
+      } catch (err) {
+        document.body.removeChild(textArea);
+        resolve(false);
+      }
+    }
+  });
+}

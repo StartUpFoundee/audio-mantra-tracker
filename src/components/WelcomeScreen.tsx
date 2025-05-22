@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar } from "@/components/ui/calendar";
@@ -14,11 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { spiritualSymbols } from '@/data/spiritualSymbols';
-import { generateUserID, doesIdMatchDOB, doesIdMatchName } from '@/utils/identityUtils';
+import { generateUserID, doesIdMatchDOB, doesIdMatchName, copyToClipboard } from '@/utils/identityUtils';
 import { useAuth, UserData } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Check, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, AlertCircle, Copy, CheckCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { toast } from '@/hooks/use-toast';
 
 const WelcomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -36,6 +36,7 @@ const WelcomeScreen: React.FC = () => {
   const [possibleIds, setPossibleIds] = useState<string[]>([]);
   const [showRecoveryResults, setShowRecoveryResults] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleCreateIdentity = () => {
     if (!name || !dob || !selectedSymbol) {
@@ -157,6 +158,19 @@ const WelcomeScreen: React.FC = () => {
     }
   };
 
+  const copyIdToClipboard = async () => {
+    const success = await copyToClipboard(generatedId);
+    if (success) {
+      setIsCopied(true);
+      toast({
+        title: "ID Copied",
+        description: "Your ID has been copied to clipboard",
+        duration: 2000,
+      });
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
   const startYear = 1900;
   const currentYear = new Date().getFullYear();
   const yearsRange = Array.from(
@@ -215,7 +229,7 @@ const WelcomeScreen: React.FC = () => {
                     {dob ? format(dob, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-zinc-800 border-zinc-700">
+                <PopoverContent className="w-auto p-0 bg-zinc-900 border-zinc-700">
                   <div className="bg-zinc-800 p-2 border-b border-zinc-700">
                     <select 
                       className="bg-zinc-700 text-amber-300 p-1 rounded w-full"
@@ -241,7 +255,7 @@ const WelcomeScreen: React.FC = () => {
                     selected={dob}
                     onSelect={setDOB}
                     initialFocus
-                    className="bg-zinc-800"
+                    className="bg-zinc-900"
                     captionLayout="dropdown-buttons"
                     fromYear={1900}
                     toYear={currentYear}
@@ -349,7 +363,7 @@ const WelcomeScreen: React.FC = () => {
                     {recoverDOB ? format(recoverDOB, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-zinc-800 border-zinc-700">
+                <PopoverContent className="w-auto p-0 bg-zinc-900 border-zinc-700">
                   <div className="bg-zinc-800 p-2 border-b border-zinc-700">
                     <select 
                       className="bg-zinc-700 text-amber-300 p-1 rounded w-full"
@@ -375,7 +389,7 @@ const WelcomeScreen: React.FC = () => {
                     selected={recoverDOB}
                     onSelect={setRecoverDOB}
                     initialFocus
-                    className="bg-zinc-800"
+                    className="bg-zinc-900"
                     captionLayout="dropdown-buttons"
                     fromYear={1900}
                     toYear={currentYear}
@@ -441,8 +455,19 @@ const WelcomeScreen: React.FC = () => {
             <DialogDescription className="text-center text-gray-300">
               <div className="mt-2 p-4 bg-zinc-800 rounded-lg border border-amber-500/30">
                 <p className="mb-2">Your unique ID is:</p>
-                <p className="text-xl font-mono text-amber-400 bg-zinc-700 p-2 rounded">{generatedId}</p>
-                <p className="mt-2 text-xs text-amber-200">
+                <div className="flex items-center justify-center mb-1">
+                  <p className="text-xl font-mono text-amber-400 bg-zinc-700 p-2 rounded-l">{generatedId}</p>
+                  <Button 
+                    variant="outline"
+                    size="icon"
+                    className="rounded-l-none h-10 bg-zinc-700 border-zinc-600 hover:bg-zinc-600 text-amber-300"
+                    onClick={copyIdToClipboard}
+                    title="Copy ID to clipboard"
+                  >
+                    {isCopied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-amber-200">
                   Format: [Birthday]_[Name Initials]_[Unique Code]
                 </p>
               </div>
