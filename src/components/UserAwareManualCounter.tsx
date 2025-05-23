@@ -22,7 +22,7 @@ const UserAwareManualCounter: React.FC = () => {
     }
   }, [user]);
 
-  // Render the original ManualCounter
+  // Import directly without using require
   return <ManualCounter />;
 };
 
