@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateUserChantingStats } from "@/utils/dbUtils";
+import MantraCounter from "@/components/MantraCounter";
 
 const UserAwareMantraCounter: React.FC = () => {
   // This component is just a wrapper around the original MantraCounter
@@ -21,8 +22,8 @@ const UserAwareMantraCounter: React.FC = () => {
     }
   }, [user]);
 
-  // Just render the original MantraCounter
-  return React.createElement(require("@/components/MantraCounter").default);
+  // Render the original MantraCounter properly imported above
+  return <MantraCounter />;
 };
 
 export default UserAwareMantraCounter;

@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateUserChantingStats } from "@/utils/dbUtils";
+import ManualCounter from "@/components/ManualCounter";
 
 const UserAwareManualCounter: React.FC = () => {
   // This component is just a wrapper around the original ManualCounter
@@ -21,8 +22,8 @@ const UserAwareManualCounter: React.FC = () => {
     }
   }, [user]);
 
-  // Just render the original ManualCounter
-  return React.createElement(require("@/components/ManualCounter").default);
+  // Render the original ManualCounter properly imported above
+  return <ManualCounter />;
 };
 
 export default UserAwareManualCounter;
