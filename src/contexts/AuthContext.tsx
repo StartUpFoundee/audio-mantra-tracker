@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getCountFromDB } from '@/utils/dbUtils';
 
 interface SpiritualSymbol {
   id: string;
@@ -52,28 +53,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [shouldShowGreeting, setShouldShowGreeting] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check for user data in localStorage on component mount
-    const userData = localStorage.getItem('chantTrackerUserData');
-    if (userData) {
-      const parsedData = JSON.parse(userData);
-      
-      // Check if we should show the greeting popup (once per day)
-      const lastLogin = new Date(parsedData.lastLogin);
-      const today = new Date();
-      const shouldGreet = parsedData.showDailyPopup !== false && 
-        (lastLogin.toDateString() !== today.toDateString());
-      
-      // Update last login time
-      const updatedUserData = {
-        ...parsedData,
-        lastLogin: new Date().toISOString()
-      };
-      localStorage.setItem('chantTrackerUserData', JSON.stringify(updatedUserData));
-      
-      setUser(updatedUserData);
-      setIsAuthenticated(true);
-      setShouldShowGreeting(shouldGreet);
-    }
+    // Load user data and chanting stats
+    const loadUserData = async () => {
+      // Check for user data in localStorage on component mount
+      const userData = localStorage.getItem('chantTrackerUserData');
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        
+        // Check if we should show the greeting popup (once per day)
+        const lastLogin = new Date(parsedData.lastLogin);
+        const today = new Date();
+        const shouldGreet = parsedData.showDailyPopup !== false && 
+          (lastLogin.toDateString() !== today.toDateString());
+        
+        // Update last login time
+        const updatedUserData = {
+          ...parsedData,
+          lastLogin: new Date().toISOString()
+        };
+        
+        // Try to get the latest chanting stats from IndexedDB
+        const lifetimeCount = await getCountFromDB('lifetime') as number;
+        const todayCount = await getCountFromDB('today') as number;
+        const lastDate = await getCountFromDB('lastCountDate') as string;
+        
+        // Update the chanting stats if values are available from IndexedDB
+        if (lifetimeCount !== null || todayCount !== null) {
+          updatedUserData.chantingStats = {
+            lifetime: lifetimeCount !== null ? lifetimeCount : updatedUserData.chantingStats?.lifetime || 0,
+            today: todayCount !== null ? todayCount : updatedUserData.chantingStats?.today || 0,
+            lastDate: lastDate || new Date().toDateString()
+          };
+        }
+        
+        localStorage.setItem('chantTrackerUserData', JSON.stringify(updatedUserData));
+        
+        setUser(updatedUserData);
+        setIsAuthenticated(true);
+        setShouldShowGreeting(shouldGreet);
+      }
+    };
+    
+    loadUserData();
   }, []);
 
   const login = (id: string): boolean => {

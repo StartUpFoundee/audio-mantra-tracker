@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Mic, Hand, Infinity, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProfileHeader from "@/components/ProfileHeader";
 import DailyGreetingPopup from "@/components/DailyGreetingPopup";
+import { getInitialCounts } from "@/utils/dbUtils";
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,25 +14,22 @@ const HomePage: React.FC = () => {
   const [todayCount, setTodayCount] = useState(0);
   const [showGreeting, setShowGreeting] = useState(false);
   
-  // Load saved counts from localStorage or user data
+  // Load saved counts from IndexedDB or user data
   useEffect(() => {
-    if (user && user.chantingStats) {
-      // If user is logged in, use their stats
-      setLifetimeCount(user.chantingStats.lifetime || 0);
-      setTodayCount(user.chantingStats.today || 0);
-    } else {
-      // Otherwise use localStorage directly
-      const savedLifetimeCount = localStorage.getItem('lifetimeCount');
-      const savedTodayCount = localStorage.getItem('todayCount');
-      
-      if (savedLifetimeCount) {
-        setLifetimeCount(parseInt(savedLifetimeCount, 10));
+    const loadCounts = async () => {
+      if (user && user.chantingStats) {
+        // If user is logged in, use their stats
+        setLifetimeCount(user.chantingStats.lifetime || 0);
+        setTodayCount(user.chantingStats.today || 0);
+      } else {
+        // Otherwise use IndexedDB directly
+        const { lifetimeCount: savedLifetimeCount, todayCount: savedTodayCount } = await getInitialCounts();
+        setLifetimeCount(savedLifetimeCount);
+        setTodayCount(savedTodayCount);
       }
-      
-      if (savedTodayCount) {
-        setTodayCount(parseInt(savedTodayCount, 10));
-      }
-    }
+    };
+    
+    loadCounts();
     
     // Show greeting popup with a slight delay if needed
     if (shouldShowGreeting) {
