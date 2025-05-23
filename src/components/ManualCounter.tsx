@@ -8,6 +8,7 @@ import CompletionAlert from "@/components/CompletionAlert";
 import TargetSelector from "@/components/TargetSelector";
 import { Hand } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import ManualCounter from "@/components/ManualCounter"; // Import directly
 
 const UserAwareManualCounter: React.FC = () => {
   // This component is just a wrapper around the original ManualCounter
@@ -44,8 +45,8 @@ const UserAwareManualCounter: React.FC = () => {
     };
   }, [user]);
 
-  // Just render the original ManualCounter
-  return React.createElement(require("@/components/ManualCounter").default);
+  // Use direct import instead of require
+  return <ManualCounter />;
 };
 
 export default UserAwareManualCounter;

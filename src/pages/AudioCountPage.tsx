@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import UserAwareMantraCounter from "@/components/MantraCounter";
+import UserAwareMantraCounter from "@/components/UserAwareMantraCounter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home } from "lucide-react";
 import ProfileHeader from "@/components/ProfileHeader";
