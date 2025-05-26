@@ -22,7 +22,7 @@ const UserAwareMantraCounter: React.FC = () => {
     }
   }, [user]);
 
-  // Render the original MantraCounter properly imported above
+  // Render the MantraCounter component
   return <MantraCounter />;
 };
 
